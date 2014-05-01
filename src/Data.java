@@ -1,21 +1,12 @@
 
 public class Data {
     
-    private int value;
-    private long timestamp;
-    private int processId;
-    private int replicaId;
+    private Integer value;
+    private Long timestamp;
     
     
-    public int getReplicaId() {
-        return replicaId;
-    }
-
-    public void setReplicaId(int replicaId) {
-        this.replicaId = replicaId;
-    }
-
-    public Data(int value, long timestamp) {
+    
+    public Data(Integer value, Long timestamp) {
         this.value = value;
         this.timestamp = timestamp;
     }
@@ -24,7 +15,7 @@ public class Data {
         return value;
     }
 
-    public void setValue(int value) {
+    public void setValue(Integer value) {
         this.value = value;
     }
 
@@ -32,16 +23,9 @@ public class Data {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
+    public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
 
-    public int getProcessId() {
-        return processId;
-    }
-
-    public void setProcessId(int processId) {
-        this.processId = processId;
-    }
-    
+        
 }

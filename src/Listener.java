@@ -16,7 +16,7 @@ public class Listener extends Thread{
     Integer averageDelays[] = new Integer[3];
     Map<Integer, Data> keyValueStore = new HashMap<Integer, Data>();
     Map<Integer, Integer> processToPort = new HashMap<Integer, Integer>();
-    Map<String, List<Data> > getRepliesMap= new HashMap<String, List<Data>>();
+    Map<String, List<ProcessData> > getRepliesMap= new HashMap<String, List<ProcessData>>();
     Map<String, Integer > insertRepliesMap= new HashMap<String, Integer>();
     
     Lock lock;
@@ -148,28 +148,48 @@ public class Listener extends Thread{
                     Integer fromProcess = Integer.parseInt(tokens[4]); 
                     Integer replicaId = Integer.parseInt(tokens[5]); 
                     Integer level = Integer.parseInt(tokens[6]); 
-                    Data tmp = new Data(value, valueTS);
+                    
+                    ProcessData tmp = new ProcessData();
+                    tmp.setData(new Data(value, valueTS));
                     tmp.setProcessId(fromProcess);
+                    tmp.setReplicaId(replicaId);
+                    tmp.setKey(key);
                     String mapKey = key.toString() + ":" + requestTS.toString();
                     if(getRepliesMap.containsKey(mapKey)){
-                        List<Data> l = getRepliesMap.get(mapKey);
+                        List<ProcessData> l = getRepliesMap.get(mapKey);
                         l.add(tmp);
                         // check for size and perform consistency clean-ups
                         if(l.size() == 3){
-                            new ReadRepair(l).start();  
+                            new ReadRepair(l,averageDelays, processToPort).start();  
                         }
                     }else{
-                        List<Data> d = new ArrayList<Data>();
+                        List<ProcessData> d = new ArrayList<ProcessData>();
                         d.add(tmp);
                         getRepliesMap.put(mapKey, d);
                         if(level == 1){
-                            System.out.println("Value for KEY " + key + " : " + tmp.getValue());
+                            System.out.println("Value for KEY " + key + " : " + tmp.getData().getValue());
                         }   
                     }
-                    
-                    
-                    
                 }
+                
+                if(tokens[0].toLowerCase().equals("read_repair")){
+                    Integer key = Integer.parseInt(tokens[1]);
+                    Integer value = Integer.parseInt(tokens[2]);
+                    Long timestamp = Long.parseLong(tokens[3]);
+                    Data d = new Data(value, timestamp);
+                    // inspect the keyValueStore
+                    while(!lock.tryLock());
+                    if(keyValueStore.containsKey(key)){
+                        Data tmp = keyValueStore.get(key);
+                        if(tmp.getTimestamp() < timestamp){
+                            keyValueStore.put(key, new Data(value, timestamp));
+                        }
+                    }else{
+                        System.out.println("Read Repair Done !!");
+                        keyValueStore.put(key, new Data(value, timestamp));
+                    }
+                    lock.unlock();
+                }   
                 
             }
         }catch(Exception e){
@@ -181,20 +201,3 @@ public class Listener extends Thread{
 }
 
 
-class ReadRepair extends Thread{
-    List<Data> data;
-    ReadRepair(List<Data> l){
-        this.data = l;
-    }
-    public void run(){
-        Long maxTS = -1L;
-        int val = -1;
-        for(int i = 0;i< data.size();i++){
-            if(maxTS < data.get(i).getTimestamp()){
-                val = data.get(i).getValue();
-                maxTS = data.get(i).getTimestamp();
-            }
-        }
-        System.out.println("Most recent written value = " + val);
-    }
-}
