@@ -4,9 +4,12 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.Lock;
 
 
@@ -18,18 +21,24 @@ public class Listener extends Thread{
     Map<Integer, Integer> processToPort = new HashMap<Integer, Integer>();
     Map<String, List<ProcessData> > getRepliesMap= new HashMap<String, List<ProcessData>>();
     Map<String, Integer > insertRepliesMap= new HashMap<String, Integer>();
-    
+    Boolean []isValidating;
+    Boolean []isKeyPresent;
     Lock lock;
+    CyclicBarrier barrier;
     
     public Listener(Integer processId, Integer[] averageDelays,
             Map<Integer, Data> keyValueStore,
-            Map<Integer, Integer> processToPort, Lock lock) {
+            Boolean []isValidating, Boolean []isKeyPresent,
+            Map<Integer, Integer> processToPort, Lock lock, CyclicBarrier barrier) {
         
         this.processId = processId;
         this.averageDelays = averageDelays;
         this.keyValueStore = keyValueStore;
         this.processToPort = processToPort;
         this.lock = lock;
+        this.isKeyPresent = isKeyPresent;
+        this.isValidating = isValidating;
+        this.barrier = barrier;
     }
     
     public void run(){
@@ -155,12 +164,17 @@ public class Listener extends Thread{
                     tmp.setReplicaId(replicaId);
                     tmp.setKey(key);
                     String mapKey = key.toString() + ":" + requestTS.toString();
+                    System.out.println("Get reply - " + isValidating);
                     if(getRepliesMap.containsKey(mapKey)){
                         List<ProcessData> l = getRepliesMap.get(mapKey);
                         l.add(tmp);
                         // check for size and perform consistency clean-ups
                         if(l.size() == 3){
-                            new ReadRepair(l,averageDelays, processToPort).start();  
+                            if(!isValidating[0]){
+                                new ReadRepair(l,averageDelays, processToPort).start();
+                            }else{
+                                checkIfKeyPresent(l);
+                            }
                         }
                     }else{
                         List<ProcessData> d = new ArrayList<ProcessData>();
@@ -197,7 +211,23 @@ public class Listener extends Thread{
         }
     }
     
-    
+    private void checkIfKeyPresent(List<ProcessData> l){
+        Collections.sort(l);
+        
+        ProcessData tmp = l.get(0);
+        if(tmp.getData().getTimestamp() > 0 && tmp.getData().getValue() > 0){
+            isKeyPresent[0] = true;
+        }else{
+            isKeyPresent[0] = false;
+        }
+        isValidating[0] = false;
+        System.out.println("Awaking Reader");
+        try{
+            barrier.await();
+        }catch(Exception e){
+            
+        }
+    }
 }
 
 
