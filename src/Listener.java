@@ -181,7 +181,11 @@ public class Listener extends Thread{
                         d.add(tmp);
                         getRepliesMap.put(mapKey, d);
                         if(level == 1){
-                            System.out.println("Value for KEY " + key + " : " + tmp.getData().getValue());
+                            if(tmp.getData().getValue() != -1){
+                                System.out.println("Value for KEY " + key + " : " + tmp.getData().getValue());
+                            }else{
+                                System.out.println("Key not found");
+                            }
                         }   
                     }
                 }
