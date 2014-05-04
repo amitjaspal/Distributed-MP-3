@@ -21,6 +21,7 @@ public class Listener extends Thread{
     Map<Integer, Integer> processToPort = new HashMap<Integer, Integer>();
     Map<String, List<ProcessData> > getRepliesMap= new HashMap<String, List<ProcessData>>();
     Map<String, Integer > insertRepliesMap= new HashMap<String, Integer>();
+    Map<String, Integer > updateRepliesMap= new HashMap<String, Integer>();
     Boolean []isValidating;
     Boolean []isKeyPresent;
     Lock lock;
@@ -207,8 +208,70 @@ public class Listener extends Thread{
                         keyValueStore.put(key, new Data(value, timestamp));
                     }
                     lock.unlock();
-                }   
+                }
                 
+                if(tokens[0].toLowerCase().equals("update_background")){
+                    Integer key = Integer.parseInt(tokens[1]);
+                    Integer value = Integer.parseInt(tokens[2]);
+                    Long timestamp = Long.parseLong(tokens[3]);
+                    Integer fromProcess = Integer.parseInt(tokens[4]);
+                    Integer replicaId = Integer.parseInt(tokens[5]);
+                    Integer level = Integer.parseInt(tokens[6]);
+                    Data d = new Data(value, timestamp);
+                    
+                    // inspect the keyValueStore
+                    while(!lock.tryLock());
+                    if(keyValueStore.containsKey(key)){
+                        Data tmp = keyValueStore.get(key);
+                        if(tmp.getTimestamp() < timestamp){
+                            keyValueStore.put(key, new Data(value, timestamp));
+                        }
+                    }else{
+                    	// Key should be present unless someone 
+                    	// performs a delete simultaneously ?
+                        //keyValueStore.put(key, new Data(value, timestamp));
+                    }
+                    lock.unlock();
+                    
+                    StringBuffer messageBuilder = new StringBuffer();
+                    messageBuilder.append("update_reply");
+                    messageBuilder.append(" " + key.toString());
+                    messageBuilder.append(" " + timestamp.toString());
+                    messageBuilder.append(" " + value.toString());
+                    messageBuilder.append(" " + processId.toString());
+                    messageBuilder.append(" " + replicaId.toString());
+                    messageBuilder.append(" " + level.toString());
+                    String message = messageBuilder.toString();
+                    Sender h  = new Sender(message, 0, processToPort.get(fromProcess));
+                    h.start();
+                    
+                }
+                
+                
+                if(tokens[0].toLowerCase().equals("update_reply")){
+                    Integer key = Integer.parseInt(tokens[1]);
+                    Long requestTS = Long.parseLong(tokens[2]); 
+                    Integer value = Integer.parseInt(tokens[3]);
+                    Integer fromProcess = Integer.parseInt(tokens[4]); 
+                    Integer replicaId = Integer.parseInt(tokens[5]); 
+                    Integer level = Integer.parseInt(tokens[6]); 
+                    String mapKey = key.toString() + ":" + requestTS.toString();
+
+                    if(updateRepliesMap.containsKey(mapKey)){
+                        int count = updateRepliesMap.get(mapKey);
+                        updateRepliesMap.put(mapKey, count + 1);
+                        // check for size and perform consistency clean-ups
+                        if(count + 1 == 3 && level == 9){
+                        	updateRepliesMap.remove(mapKey);
+                            System.out.println("Inserted Key with level 9");
+                        }
+                    }else{
+                    	updateRepliesMap.put(mapKey, 1);
+                        if(level == 1){
+                            System.out.println("Updated Key with level 1");
+                        }   
+                    }
+                }
             }
         }catch(Exception e){
             
