@@ -22,6 +22,7 @@ public class Listener extends Thread{
     Map<String, List<ProcessData> > getRepliesMap= new HashMap<String, List<ProcessData>>();
     Map<String, Integer > insertRepliesMap= new HashMap<String, Integer>();
     Map<String, Integer > updateRepliesMap= new HashMap<String, Integer>();
+    Map<String, Integer > deleteRepliesMap= new HashMap<String, Integer>();
     Boolean []isValidating;
     Boolean []isKeyPresent;
     Lock lock;
@@ -263,12 +264,67 @@ public class Listener extends Thread{
                         // check for size and perform consistency clean-ups
                         if(count + 1 == 3 && level == 9){
                         	updateRepliesMap.remove(mapKey);
-                            System.out.println("Inserted Key with level 9");
+                            System.out.println("Updated Key with level 9");
                         }
                     }else{
                     	updateRepliesMap.put(mapKey, 1);
                         if(level == 1){
                             System.out.println("Updated Key with level 1");
+                        }   
+                    }
+                }
+                
+                
+                if(tokens[0].toLowerCase().equals("delete_background")){
+                    Integer key = Integer.parseInt(tokens[1]);
+                    Long timestamp = Long.parseLong(tokens[2]);
+                    Integer fromProcess = Integer.parseInt(tokens[3]);
+                    Integer replicaId = Integer.parseInt(tokens[4]);
+                    Integer level = Integer.parseInt(tokens[5]);
+                    
+                    // inspect the keyValueStore
+                    while(!lock.tryLock());
+                    if(keyValueStore.containsKey(key)){
+                        Data tmp = keyValueStore.get(key);
+                        if(tmp.getTimestamp() < timestamp){
+                            keyValueStore.remove(key);
+                        }
+                    }
+                    lock.unlock();
+                    
+                    StringBuffer messageBuilder = new StringBuffer();
+                    messageBuilder.append("delete_reply");
+                    messageBuilder.append(" " + key.toString());
+                    messageBuilder.append(" " + timestamp.toString());
+                    messageBuilder.append(" " + processId.toString());
+                    messageBuilder.append(" " + replicaId.toString());
+                    messageBuilder.append(" " + level.toString());
+                    String message = messageBuilder.toString();
+                    Sender h  = new Sender(message, 0, processToPort.get(fromProcess));
+                    h.start();
+                    
+                }
+                
+                if(tokens[0].toLowerCase().equals("delete_reply")){
+                    Integer key = Integer.parseInt(tokens[1]);
+                    Long requestTS = Long.parseLong(tokens[2]);
+                    Integer fromProcess = Integer.parseInt(tokens[3]); 
+                    Integer replicaId = Integer.parseInt(tokens[4]); 
+                    Integer level = Integer.parseInt(tokens[5]); 
+                    String mapKey = key.toString() + ":" + requestTS.toString();
+
+                    if(deleteRepliesMap.containsKey(mapKey)){
+                        int count = deleteRepliesMap.get(mapKey);
+                        deleteRepliesMap.put(mapKey, count + 1);
+                        // check for size and perform consistency clean-ups
+                        if(count + 1 == 3 && level == 9){
+                        	deleteRepliesMap.remove(mapKey);
+                            System.out.println("Deleted Key with level 9");
+                        }
+                    }else{
+                    	deleteRepliesMap.put(mapKey, 1);
+                        if(level == 1){
+                            System.out.println("Deleted Key with level 1");
                         }   
                     }
                 }

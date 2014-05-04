@@ -101,7 +101,6 @@ public class Reader extends Thread {
                         }
                 }
 
-                // message format : get_background key ts pid replicaId level
                 if(tokens[0].toLowerCase().equals("update")){
                     // Check if a particular key is present in the system or not.
                     checkIfKeyPresent(tokens);
@@ -133,7 +132,38 @@ public class Reader extends Thread {
                             Sender h  = new Sender(message, delay, portNumber);
                             h.start();
                     }
-                }  
+                }
+                
+                if(tokens[0].toLowerCase().equals("delete")){
+                    // Check if a particular key is present in the system or not.
+                    checkIfKeyPresent(tokens);
+                    
+                    System.out.println("Reader woke up");
+                    barrier.reset();
+                    if(!isKeyPresent[0]){
+                        System.out.println(" key is not present.");
+                        continue;
+                    }
+                    
+                    StringBuffer messageBuilder = new StringBuffer();
+                    messageBuilder.append("delete_background");
+                    Integer key = Integer.parseInt(tokens[1]);
+                    messageBuilder.append(" " + key.toString());
+                    Long unixTime = System.currentTimeMillis() / 1000L;
+                    messageBuilder.append(" " + unixTime.toString());
+                    messageBuilder.append(" " + processId.toString());
+                    Integer level = Integer.parseInt(tokens[2]);
+                    
+                    for(int i = 0;i<replicas;i++){
+                            int node = (key +i) % totalProcesses;
+                            System.out.println("node = " + node);
+                            int delay = averageDelays[i];
+                            int portNumber = processToPort.get(node);
+                            message = messageBuilder.toString() + " " + i + " " + level; 
+                            Sender h  = new Sender(message, delay, portNumber);
+                            h.start();
+                    }
+                } 
             }
         }catch( IOException e){
             
