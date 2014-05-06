@@ -287,7 +287,7 @@ public class Listener extends Thread{
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.remove(key);
+                            keyValueStore.put(key, new Data(-1, timestamp));
                         }
                     }
                     lock.unlock();
