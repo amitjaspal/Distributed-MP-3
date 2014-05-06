@@ -168,7 +168,7 @@ public class Reader extends Thread {
                 if(tokens[0].toLowerCase().equals("show-all")){
                 	while(!lock.tryLock());
                     for (Entry<Integer, Data> e : keyValueStore.entrySet()) {
-                    	System.out.println(e.getKey() + ": " + e.getValue());
+                    	System.out.println(e.getKey() + ": " + e.getValue().getValue());
                     }
                     lock.unlock();
                 }
