@@ -20,7 +20,7 @@ public class Reader extends Thread {
     Boolean []isKeyPresent;
     CyclicBarrier barrier;
     
-    int totalProcesses = 4;
+    int totalProcesses;
     int replicas = 3;
     String HOST_NAME = "127.0.0.1";
     
@@ -37,6 +37,7 @@ public class Reader extends Thread {
         this.isKeyPresent = isKeyPresent;
         this.isValidating = isValidating;
         this.barrier = barrier;
+        totalProcesses = processToPort.keySet().size();
     }
 
     public void run() {
