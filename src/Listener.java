@@ -73,7 +73,10 @@ public class Listener extends Thread{
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.put(key, new Data(value, timestamp, "insert"));
+                        	tmp.setValue(value);
+                        	tmp.setTimestamp(timestamp);
+                        	tmp.setOperation("insert");
+                        	tmp.getHistory().add(new History(timestamp, "insert"));
                         }
                     }else{
                         keyValueStore.put(key, new Data(value, timestamp, "insert"));
@@ -202,7 +205,10 @@ public class Listener extends Thread{
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.put(key, new Data(value, timestamp, "read"));
+                        	tmp.setValue(value);
+                        	tmp.setTimestamp(timestamp);
+                        	tmp.setOperation("read");
+                        	tmp.getHistory().add(new History(timestamp, "read"));
                         }
                     }else{
                         System.out.println("Read Repair Done !!");
@@ -225,7 +231,9 @@ public class Listener extends Thread{
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.put(key, new Data(value, timestamp, "update"));
+                        	tmp.setValue(value);
+                        	tmp.setTimestamp(timestamp);
+                        	tmp.getHistory().add(new History(timestamp, "update"));
                         }
                     }else{
                     	// Key should be present unless someone 
@@ -286,9 +294,25 @@ public class Listener extends Thread{
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.put(key, new Data(-1, timestamp, "delete"));
-                        } else if (tmp.getTimestamp() > timestamp && tmp.getLastOperation().equals("update")) {
-                        	keyValueStore.put(key, new Data(-1, timestamp, "delete"));
+                        	tmp.setValue(-1);
+                        	tmp.setTimestamp(timestamp);
+                        	tmp.setOperation("delete");
+                        	tmp.getHistory().add(new History(timestamp, "delete"));
+                        } else {
+                        	boolean flag = true;
+                        	
+                        	for (History hist : tmp.getHistory()) {
+                        		if (hist.getTimestamp() > timestamp && hist.getOperation().equals("insert")) {
+                        			flag = false;
+                        		}
+                        	}
+                        	
+                        	if (flag) {
+                            	tmp.setValue(-1);
+                            	tmp.setTimestamp(timestamp);
+                            	tmp.setOperation("delete");
+                            	tmp.getHistory().add(new History(timestamp, "delete"));
+                        	}
                         }
                     }
                     lock.unlock();

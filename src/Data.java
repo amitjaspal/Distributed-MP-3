@@ -1,16 +1,27 @@
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class Data {
     
     private Integer value;
     private Long timestamp;
-    private String lastOperation;
+    private String operation;
+    private List<History> operationHistory;
     
-    public Data(Integer value, Long timestamp, String lastOperation) {
+    public Data(Integer value, Long timestamp, String operation) {
         this.value = value;
         this.timestamp = timestamp;
-        this.lastOperation = lastOperation;
+        this.operation = operation;
+        operationHistory = new ArrayList<History>();
+        operationHistory.add(new History(timestamp, operation));
     }
 
+    public List<History> getHistory()
+    {
+    	return operationHistory;
+    }
+    
     public int getValue() {
         return value;
     }
@@ -26,12 +37,12 @@ public class Data {
     public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
-
-    public String getLastOperation() {
-        return lastOperation;
+    
+    public String getOperation() {
+        return operation;
     }
 
-    public void setTimestamp(String lastOperation) {
-        this.lastOperation = lastOperation;
-    }    
+    public void setOperation(String operation) {
+        this.operation = operation;
+    } 
 }
