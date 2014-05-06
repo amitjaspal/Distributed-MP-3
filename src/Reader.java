@@ -181,13 +181,12 @@ public class Reader extends Thread {
                     Long unixTime = System.currentTimeMillis() / 1000L;
                     messageBuilder.append(" " + unixTime.toString());
                     messageBuilder.append(" " + processId.toString());
-                    Integer level = Integer.parseInt(tokens[2]);
                     
                     for(int i = 0;i<replicas;i++){
                             int node = (key +i) % totalProcesses;
                             int delay = averageDelays[i];
                             int portNumber = processToPort.get(node);
-                            message = messageBuilder.toString() + " " + i + " " + level.toString();
+                            message = messageBuilder.toString() + " " + i;
                             Sender h  = new Sender(message, delay, portNumber);
                             h.start();
                     }
