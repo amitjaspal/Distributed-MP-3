@@ -18,8 +18,9 @@ class Sender extends Thread
         
         
         try {
-               // TODO: introduce random delay. 
-               Thread.sleep(delay); 
+               //Introducing a random delay in the range 0, 2 * delay
+               Thread.sleep((long) Math.ceil((Math.random() * delay * 2)));
+               
                Socket socket = new Socket(HOST_NAME, portNumber);
                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
                out.println(message);
