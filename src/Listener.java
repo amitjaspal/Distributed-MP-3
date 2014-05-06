@@ -66,17 +66,17 @@ public class Listener extends Thread{
                     Integer fromProcess = Integer.parseInt(tokens[4]);
                     Integer replicaId = Integer.parseInt(tokens[5]);
                     Integer level = Integer.parseInt(tokens[6]);
-                    Data d = new Data(value, timestamp);
+                    Data d = new Data(value, timestamp, "insert");
                     
                     // inspect the keyValueStore
                     while(!lock.tryLock());
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.put(key, new Data(value, timestamp));
+                            keyValueStore.put(key, new Data(value, timestamp, "insert"));
                         }
                     }else{
-                        keyValueStore.put(key, new Data(value, timestamp));
+                        keyValueStore.put(key, new Data(value, timestamp, "insert"));
                     }
                     lock.unlock();
                     
@@ -161,7 +161,7 @@ public class Listener extends Thread{
                     Integer level = Integer.parseInt(tokens[6]); 
                     
                     ProcessData tmp = new ProcessData();
-                    tmp.setData(new Data(value, valueTS));
+                    tmp.setData(new Data(value, valueTS, "reply"));
                     tmp.setProcessId(fromProcess);
                     tmp.setReplicaId(replicaId);
                     tmp.setKey(key);
@@ -196,17 +196,17 @@ public class Listener extends Thread{
                     Integer key = Integer.parseInt(tokens[1]);
                     Integer value = Integer.parseInt(tokens[2]);
                     Long timestamp = Long.parseLong(tokens[3]);
-                    Data d = new Data(value, timestamp);
+                    Data d = new Data(value, timestamp, "read");
                     // inspect the keyValueStore
                     while(!lock.tryLock());
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.put(key, new Data(value, timestamp));
+                            keyValueStore.put(key, new Data(value, timestamp, "read"));
                         }
                     }else{
                         System.out.println("Read Repair Done !!");
-                        keyValueStore.put(key, new Data(value, timestamp));
+                        keyValueStore.put(key, new Data(value, timestamp, "read"));
                     }
                     lock.unlock();
                 }
@@ -218,14 +218,14 @@ public class Listener extends Thread{
                     Integer fromProcess = Integer.parseInt(tokens[4]);
                     Integer replicaId = Integer.parseInt(tokens[5]);
                     Integer level = Integer.parseInt(tokens[6]);
-                    Data d = new Data(value, timestamp);
+                    Data d = new Data(value, timestamp, "update");
                     
                     // inspect the keyValueStore
                     while(!lock.tryLock());
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.put(key, new Data(value, timestamp));
+                            keyValueStore.put(key, new Data(value, timestamp, "update"));
                         }
                     }else{
                     	// Key should be present unless someone 
@@ -286,7 +286,9 @@ public class Listener extends Thread{
                     if(keyValueStore.containsKey(key)){
                         Data tmp = keyValueStore.get(key);
                         if(tmp.getTimestamp() < timestamp){
-                            keyValueStore.put(key, new Data(-1, timestamp));
+                            keyValueStore.put(key, new Data(-1, timestamp, "delete"));
+                        } else if (tmp.getTimestamp() > timestamp && tmp.getLastOperation().equals("update")) {
+                        	keyValueStore.put(key, new Data(-1, timestamp, "delete"));
                         }
                     }
                     lock.unlock();
