@@ -172,6 +172,26 @@ public class Reader extends Thread {
                     }
                     lock.unlock();
                 }
+                
+                if(tokens[0].toLowerCase().equals("search")){
+                    StringBuffer messageBuilder = new StringBuffer();
+                    messageBuilder.append("search_background");
+                    Integer key = Integer.parseInt(tokens[1]);
+                    messageBuilder.append(" " + key.toString());
+                    Long unixTime = System.currentTimeMillis() / 1000L;
+                    messageBuilder.append(" " + unixTime.toString());
+                    messageBuilder.append(" " + processId.toString());
+                    Integer level = Integer.parseInt(tokens[2]);
+                    
+                    for(int i = 0;i<replicas;i++){
+                            int node = (key +i) % totalProcesses;
+                            int delay = averageDelays[i];
+                            int portNumber = processToPort.get(node);
+                            message = messageBuilder.toString() + " " + i + " " + level.toString();
+                            Sender h  = new Sender(message, delay, portNumber);
+                            h.start();
+                    }
+                }
             }
         }catch( IOException e){
             

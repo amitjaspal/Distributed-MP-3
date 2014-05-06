@@ -322,6 +322,49 @@ public class Listener extends Thread{
                     	deleteRepliesMap.put(mapKey, 1);
                     }
                 }
+                
+                
+                
+                // message format : get_reply key ts value pid replicaId level
+                if(tokens[0].toLowerCase().equals("search_background")){
+                    Integer key = Integer.parseInt(tokens[1]);
+                    Long requestTS = Long.parseLong(tokens[2]); 
+                    Integer fromProcess = Integer.parseInt(tokens[3]);
+                    Integer replicaId = Integer.parseInt(tokens[4]);
+                    
+                    while(!lock.tryLock());
+                    Integer value = -1;
+                    Long timestamp = -1L;
+                    if(keyValueStore.containsKey(key)){
+                        Data tmp = keyValueStore.get(key);
+                        value = tmp.getValue();
+                        timestamp = tmp.getTimestamp();
+                    }
+                    lock.unlock();
+                    
+                    StringBuffer messageBuilder = new StringBuffer();
+                    messageBuilder.append("search_reply");
+                    messageBuilder.append(" " + key.toString());
+                    messageBuilder.append(" " + tokens[2]);
+                    messageBuilder.append(" " + value.toString() + ":" + timestamp.toString());
+                    messageBuilder.append(" " + processId.toString());
+                    messageBuilder.append(" " + replicaId.toString());
+                    String message = messageBuilder.toString();
+                    Sender h  = new Sender(message, 0, processToPort.get(fromProcess));
+                    h.start();
+                    
+                }
+                
+                if (tokens[0].toLowerCase().equals("search_reply")) {
+                    Integer key = Integer.parseInt(tokens[1]);
+                    Long requestTS = Long.parseLong(tokens[2]);
+                    Integer fromProcess = Integer.parseInt(tokens[4]);
+                    Integer value = Integer.parseInt(tokens[3].split(":")[0]);
+                    
+                    if (value != -1) {
+                        System.out.println("Process " + fromProcess + " contains key " + key);
+                    }
+                }
             }
         }catch(Exception e){
             
