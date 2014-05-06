@@ -172,14 +172,6 @@ public class Reader extends Thread {
                     }
                     lock.unlock();
                 }
-                
-                if(tokens[0].toLowerCase().equals("show-all")){
-                	while(!lock.tryLock());
-                    for (Entry<Integer, Data> e : keyValueStore.entrySet()) {
-                    	System.out.println(e.getKey() + ": " + e.getValue());
-                    }
-                    lock.unlock();
-                }
             }
         }catch( IOException e){
             
