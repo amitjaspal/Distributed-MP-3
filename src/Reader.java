@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.Lock;
@@ -152,18 +153,33 @@ public class Reader extends Thread {
                     Long unixTime = System.currentTimeMillis() / 1000L;
                     messageBuilder.append(" " + unixTime.toString());
                     messageBuilder.append(" " + processId.toString());
-                    Integer level = Integer.parseInt(tokens[2]);
                     
                     for(int i = 0;i<replicas;i++){
                             int node = (key +i) % totalProcesses;
                             System.out.println("node = " + node);
                             int delay = averageDelays[i];
                             int portNumber = processToPort.get(node);
-                            message = messageBuilder.toString() + " " + i + " " + level; 
+                            message = messageBuilder.toString() + " " + i; 
                             Sender h  = new Sender(message, delay, portNumber);
                             h.start();
                     }
-                } 
+                }
+                
+                if(tokens[0].toLowerCase().equals("show-all")){
+                	while(!lock.tryLock());
+                    for (Entry<Integer, Data> e : keyValueStore.entrySet()) {
+                    	System.out.println(e.getKey() + ": " + e.getValue());
+                    }
+                    lock.unlock();
+                }
+                
+                if(tokens[0].toLowerCase().equals("show-all")){
+                	while(!lock.tryLock());
+                    for (Entry<Integer, Data> e : keyValueStore.entrySet()) {
+                    	System.out.println(e.getKey() + ": " + e.getValue());
+                    }
+                    lock.unlock();
+                }
             }
         }catch( IOException e){
             

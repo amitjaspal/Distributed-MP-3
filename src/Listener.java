@@ -280,7 +280,6 @@ public class Listener extends Thread{
                     Long timestamp = Long.parseLong(tokens[2]);
                     Integer fromProcess = Integer.parseInt(tokens[3]);
                     Integer replicaId = Integer.parseInt(tokens[4]);
-                    Integer level = Integer.parseInt(tokens[5]);
                     
                     // inspect the keyValueStore
                     while(!lock.tryLock());
@@ -298,7 +297,6 @@ public class Listener extends Thread{
                     messageBuilder.append(" " + timestamp.toString());
                     messageBuilder.append(" " + processId.toString());
                     messageBuilder.append(" " + replicaId.toString());
-                    messageBuilder.append(" " + level.toString());
                     String message = messageBuilder.toString();
                     Sender h  = new Sender(message, 0, processToPort.get(fromProcess));
                     h.start();
@@ -309,23 +307,19 @@ public class Listener extends Thread{
                     Integer key = Integer.parseInt(tokens[1]);
                     Long requestTS = Long.parseLong(tokens[2]);
                     Integer fromProcess = Integer.parseInt(tokens[3]); 
-                    Integer replicaId = Integer.parseInt(tokens[4]); 
-                    Integer level = Integer.parseInt(tokens[5]); 
+                    Integer replicaId = Integer.parseInt(tokens[4]);
                     String mapKey = key.toString() + ":" + requestTS.toString();
 
                     if(deleteRepliesMap.containsKey(mapKey)){
                         int count = deleteRepliesMap.get(mapKey);
                         deleteRepliesMap.put(mapKey, count + 1);
                         // check for size and perform consistency clean-ups
-                        if(count + 1 == 3 && level == 9){
+                        if(count + 1 == 3){
                         	deleteRepliesMap.remove(mapKey);
                             System.out.println("Deleted Key with level 9");
                         }
                     }else{
                     	deleteRepliesMap.put(mapKey, 1);
-                        if(level == 1){
-                            System.out.println("Deleted Key with level 1");
-                        }   
                     }
                 }
             }
