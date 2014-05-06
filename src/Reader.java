@@ -48,6 +48,8 @@ public class Reader extends Thread {
             while((input = br.readLine()) != null){
                 String tokens[] = input.split(" ");
                 
+                Long unixTime = System.currentTimeMillis() / 1000L;
+                
                 // message format : insert_background key value ts pid replicaId level
                 if(tokens[0].toLowerCase().equals("insert")){
                     
@@ -66,7 +68,6 @@ public class Reader extends Thread {
                     messageBuilder.append(" " + key.toString());
                     Integer value = Integer.parseInt(tokens[2]);
                     messageBuilder.append(" " + value.toString());
-                    Long unixTime = System.currentTimeMillis() / 1000L;
                     messageBuilder.append(" " + unixTime.toString());
                     messageBuilder.append(" " + processId.toString());
                     Integer level = Integer.parseInt(tokens[3]);
@@ -88,7 +89,6 @@ public class Reader extends Thread {
                     messageBuilder.append("get_background");
                     Integer key = Integer.parseInt(tokens[1]);
                     messageBuilder.append(" " + key.toString());
-                    Long unixTime = System.currentTimeMillis() / 1000L;
                     messageBuilder.append(" " + unixTime.toString());
                     messageBuilder.append(" " + processId.toString());
                     Integer level = Integer.parseInt(tokens[2]);
@@ -119,7 +119,6 @@ public class Reader extends Thread {
                     messageBuilder.append(" " + key.toString());
                     Integer value = Integer.parseInt(tokens[2]);
                     messageBuilder.append(" " + value.toString());
-                    Long unixTime = System.currentTimeMillis() / 1000L;
                     messageBuilder.append(" " + unixTime.toString());
                     messageBuilder.append(" " + processId.toString());
                     Integer level = Integer.parseInt(tokens[3]);
@@ -150,7 +149,6 @@ public class Reader extends Thread {
                     messageBuilder.append("delete_background");
                     Integer key = Integer.parseInt(tokens[1]);
                     messageBuilder.append(" " + key.toString());
-                    Long unixTime = System.currentTimeMillis() / 1000L;
                     messageBuilder.append(" " + unixTime.toString());
                     messageBuilder.append(" " + processId.toString());
                     
@@ -178,7 +176,6 @@ public class Reader extends Thread {
                     messageBuilder.append("search_background");
                     Integer key = Integer.parseInt(tokens[1]);
                     messageBuilder.append(" " + key.toString());
-                    Long unixTime = System.currentTimeMillis() / 1000L;
                     messageBuilder.append(" " + unixTime.toString());
                     messageBuilder.append(" " + processId.toString());
                     
